@@ -25,6 +25,11 @@ export function Navbar() {
             <span className="sr-only">Menu</span>
           </Button>
           <div className="flex items-center gap-2">
+            <img 
+              src="/lovable-uploads/271c7d6d-4e0d-40e7-8bbd-eafd1ed3286f.png" 
+              alt="ByteChain Logo" 
+              className="h-8 w-8 dark:drop-shadow-[0_0_8px_rgba(0,170,255,0.5)]" 
+            />
             <span className="font-bold text-xl text-bytechain-navy dark:text-white">
               ByteChain
             </span>

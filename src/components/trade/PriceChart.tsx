@@ -2,27 +2,64 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { fetchCryptoPrice, CryptoPrice } from "@/services/cryptoService";
+import { useQuery } from "@tanstack/react-query";
 
-// Mock data
-const data = [
-  { time: "00:00", price: 48000 },
-  { time: "04:00", price: 47300 },
-  { time: "08:00", price: 47900 },
-  { time: "12:00", price: 48600 },
-  { time: "16:00", price: 48200 },
-  { time: "20:00", price: 49100 },
-  { time: "24:00", price: 49800 },
-];
+// Mock price history data - in a real app, this would come from an API
+const generateMockHistoryData = (basePrice: number, timeframe: string) => {
+  let points = 7;
+  let fluctuation = 0.02;
+  let timeFormat = "MMM DD";
+  
+  switch(timeframe) {
+    case "1D":
+      points = 24;
+      fluctuation = 0.005;
+      timeFormat = "HH:mm";
+      break;
+    case "1W":
+      points = 7;
+      fluctuation = 0.02;
+      break;
+    case "1M":
+      points = 30;
+      fluctuation = 0.05;
+      break;
+    case "3M":
+      points = 90;
+      fluctuation = 0.08;
+      break;
+    case "1Y":
+      points = 12;
+      fluctuation = 0.15;
+      break;
+    case "ALL":
+      points = 24;
+      fluctuation = 0.5;
+      break;
+  }
+  
+  const data = [];
+  let price = basePrice;
+  
+  for (let i = 0; i < points; i++) {
+    const change = (Math.random() * 2 - 1) * fluctuation * price;
+    price += change;
+    data.push({ time: `Point ${i+1}`, price: Math.max(price, price * 0.1) });
+  }
+  
+  return data;
+};
 
 type TimeframeType = "1D" | "1W" | "1M" | "3M" | "1Y" | "ALL";
 
 interface PriceChartProps {
   symbol: string;
-  currentPrice: number;
-  priceChange: number;
-  priceChangePercentage: number;
+  currentPrice?: number;
+  priceChange?: number;
+  priceChangePercentage?: number;
 }
 
 export function PriceChart({
@@ -33,19 +70,44 @@ export function PriceChart({
 }: PriceChartProps) {
   const [timeframe, setTimeframe] = useState<TimeframeType>("1D");
   const timeframes: TimeframeType[] = ["1D", "1W", "1M", "3M", "1Y", "ALL"];
-  const isPositive = priceChange >= 0;
+  
+  // Fetch crypto price using React Query
+  const { data: cryptoData, isLoading } = useQuery({
+    queryKey: ['cryptoPrice', symbol],
+    queryFn: () => fetchCryptoPrice(symbol.split('/')[0]),
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // 1 minute
+  });
+  
+  // Use provided values or data from API
+  const price = currentPrice || cryptoData?.price || 0;
+  const change = priceChange || (cryptoData?.change24h ? (cryptoData.price * cryptoData.change24h / 100) : 0);
+  const changePercentage = priceChangePercentage || cryptoData?.change24h || 0;
+  const isPositive = change >= 0;
+  
+  // Generate chart data based on current price and selected timeframe
+  const [chartData, setChartData] = useState(generateMockHistoryData(price, timeframe));
+  
+  // Update chart data when price or timeframe changes
+  useEffect(() => {
+    setChartData(generateMockHistoryData(price, timeframe));
+  }, [price, timeframe]);
 
   return (
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{symbol} Price</CardTitle>
+          <CardTitle className="text-lg">
+            {isLoading ? 'Loading...' : `${symbol} Price`}
+          </CardTitle>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div>
-            <div className="text-3xl font-bold">${currentPrice.toLocaleString()}</div>
+            <div className="text-3xl font-bold">
+              ${price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </div>
             <div
               className={cn(
                 "flex items-center text-sm",
@@ -54,8 +116,8 @@ export function PriceChart({
             >
               <span>
                 {isPositive ? "+" : ""}
-                {priceChange.toFixed(2)} ({isPositive ? "+" : ""}
-                {priceChangePercentage.toFixed(2)}%)
+                {change.toFixed(2)} ({isPositive ? "+" : ""}
+                {changePercentage.toFixed(2)}%)
               </span>
             </div>
           </div>
@@ -63,7 +125,7 @@ export function PriceChart({
           <div className="h-60">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={data}
+                data={chartData}
                 margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
               >
                 <defs>
@@ -83,7 +145,7 @@ export function PriceChart({
                   hide 
                 />
                 <Tooltip
-                  formatter={(value: number) => [`$${value}`, "Price"]}
+                  formatter={(value: number) => [`$${value.toFixed(2)}`, "Price"]}
                   labelFormatter={(label) => `Time: ${label}`}
                   contentStyle={{
                     backgroundColor: "rgba(255, 255, 255, 0.9)",

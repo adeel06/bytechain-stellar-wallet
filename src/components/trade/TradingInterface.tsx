@@ -5,12 +5,42 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchCryptoPrice } from "@/services/cryptoService";
 
-export function TradingInterface() {
+interface TradingInterfaceProps {
+  onCoinChange?: (coin: string) => void;
+}
+
+export function TradingInterface({ onCoinChange }: TradingInterfaceProps) {
   const [tradeType, setTradeType] = useState("buy");
   const [amount, setAmount] = useState("");
   const [selectedCoin, setSelectedCoin] = useState("BTC");
+  
+  // Fetch crypto price for the selected coin
+  const { data: cryptoData } = useQuery({
+    queryKey: ['cryptoPrice', selectedCoin],
+    queryFn: () => fetchCryptoPrice(selectedCoin),
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // 1 minute
+  });
+  
+  // Calculate trading values
+  const currentPrice = cryptoData?.price || 0;
+  const cryptoAmount = amount ? parseFloat(amount) / currentPrice : 0;
+  const usdAmount = amount ? parseFloat(amount) * currentPrice : 0;
+  
+  // Notify parent component when selected coin changes
+  useEffect(() => {
+    if (onCoinChange) {
+      onCoinChange(selectedCoin);
+    }
+  }, [selectedCoin, onCoinChange]);
+
+  const handleCoinChange = (value: string) => {
+    setSelectedCoin(value);
+  };
 
   return (
     <Card>
@@ -27,7 +57,7 @@ export function TradingInterface() {
           <TabsContent value="buy" className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="coin">Coin</Label>
-              <Select value={selectedCoin} onValueChange={setSelectedCoin}>
+              <Select value={selectedCoin} onValueChange={handleCoinChange}>
                 <SelectTrigger id="coin">
                   <SelectValue placeholder="Select coin" />
                 </SelectTrigger>
@@ -63,7 +93,7 @@ export function TradingInterface() {
               <div className="rounded-md bg-muted p-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Price</span>
-                  <span>$48,235.00</span>
+                  <span>${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-sm py-2">
                   <span className="text-muted-foreground">Amount</span>
@@ -72,7 +102,7 @@ export function TradingInterface() {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">You will receive</span>
                   <span>
-                    {amount ? (parseFloat(amount) / 48235).toFixed(8) : "0.00000000"} BTC
+                    {cryptoAmount.toFixed(8)} {selectedCoin}
                   </span>
                 </div>
               </div>
@@ -84,7 +114,7 @@ export function TradingInterface() {
           <TabsContent value="sell" className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="sell-coin">Coin</Label>
-              <Select value={selectedCoin} onValueChange={setSelectedCoin}>
+              <Select value={selectedCoin} onValueChange={handleCoinChange}>
                 <SelectTrigger id="sell-coin">
                   <SelectValue placeholder="Select coin" />
                 </SelectTrigger>
@@ -120,7 +150,7 @@ export function TradingInterface() {
               <div className="rounded-md bg-muted p-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Price</span>
-                  <span>$48,235.00</span>
+                  <span>${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-sm py-2">
                   <span className="text-muted-foreground">Amount</span>
@@ -129,7 +159,7 @@ export function TradingInterface() {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">You will receive</span>
                   <span>
-                    {amount ? (parseFloat(amount) * 48235).toFixed(2) : "0.00"} USD
+                    {usdAmount.toFixed(2)} USD
                   </span>
                 </div>
               </div>
