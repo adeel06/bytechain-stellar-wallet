@@ -1,5 +1,5 @@
 
-import { Mnemonic, HDNodeWallet, Wallet } from "ethers";
+import { Wallet, HDNodeWallet, Mnemonic } from "ethers";
 
 /**
  * Interface representing a generated wallet
@@ -21,7 +21,9 @@ export interface GeneratedWallet {
  */
 export function generateWallet(): GeneratedWallet {
   // Create a random 12-word mnemonic
-  const mnemonic = Mnemonic.random();
+  // In ethers v6, we use Mnemonic.fromEntropy(randomBytes) instead of Mnemonic.random()
+  const entropy = crypto.getRandomValues(new Uint8Array(16)); // 128 bits = 12 words
+  const mnemonic = Mnemonic.fromEntropy(entropy);
   const phrase = mnemonic.phrase;
   
   // Derive the HDNode wallet using BIP-32 derivation path for Ethereum
