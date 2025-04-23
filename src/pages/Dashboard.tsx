@@ -1,8 +1,8 @@
-
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PortfolioCard } from "@/components/dashboard/PortfolioCard";
 import { MarketCard } from "@/components/dashboard/MarketCard";
 import { TransactionHistory } from "@/components/dashboard/TransactionHistory";
+import { WalletBalances } from "@/components/wallet/WalletBalances";
 
 // Mock data
 const marketData = [
@@ -50,6 +50,8 @@ export default function Dashboard() {
           change={1243.55} 
           changePercentage={2.21} 
         />
+        
+        <WalletBalances address="0x742d35Cc6634C0532925a3b844Bc454e4438f44e" />
         
         <MarketCard coins={marketData} />
         
