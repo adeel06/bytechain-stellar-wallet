@@ -113,7 +113,7 @@ export function BackupModal({ currentAddress, mnemonic, onRestore }: BackupModal
 
         {step === 'phrase' && showPhrase && mnemonic && (
           <div className="space-y-4 pt-4">
-            <Alert variant="warning" className="border-yellow-500">
+            <Alert variant="default" className="border-yellow-500">
               <AlertTriangle className="h-4 w-4 text-yellow-500" />
               <AlertDescription>
                 Never share your recovery phrase. Anyone with these words can access your wallet.
