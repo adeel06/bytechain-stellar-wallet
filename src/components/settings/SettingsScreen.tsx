@@ -1,10 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/context/ThemeContext";
-import { BellRing, ChevronRight, Fingerprint, Lock, Moon, Sun, User } from "lucide-react";
+import { BellRing, ChevronRight, Fingerprint, Lock, Moon, Sun, User, Wallet } from "lucide-react";
+import { BackupModal } from "@/components/wallet/BackupModal";
 
 export function SettingsScreen() {
   const { theme, setTheme } = useTheme();
@@ -48,6 +48,59 @@ export function SettingsScreen() {
                 <span>Biometric Access</span>
                 <span className="text-xs text-muted-foreground">
                   Manage fingerprint and Face ID
+                </span>
+              </div>
+              <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Security</CardTitle>
+          <CardDescription>Manage your wallet security settings</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="p-2 bg-muted rounded-md">
+                    <Wallet className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <Label>Wallet Backup</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Backup or restore your wallet using a recovery phrase
+                    </p>
+                  </div>
+                </div>
+                <BackupModal 
+                  currentAddress="0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+                  mnemonic={null}
+                  onRestore={(address) => console.log('Wallet restored:', address)}
+                />
+              </div>
+            </div>
+
+            <Button variant="ghost" className="w-full justify-start h-auto py-4 px-6">
+              <Lock className="mr-3 h-5 w-5" />
+              <div className="flex flex-col items-start">
+                <span>Change Password</span>
+                <span className="text-xs text-muted-foreground">
+                  Update your current password
+                </span>
+              </div>
+              <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
+            </Button>
+
+            <Button variant="ghost" className="w-full justify-start h-auto py-4 px-6">
+              <Fingerprint className="mr-3 h-5 w-5" />
+              <div className="flex flex-col items-start">
+                <span>Enable 2FA</span>
+                <span className="text-xs text-muted-foreground">
+                  Add an extra layer of security
                 </span>
               </div>
               <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
