@@ -15,25 +15,29 @@ export interface GeneratedWallet {
 
 /**
  * Generates a new wallet with a 12-word BIP-39 mnemonic phrase
- * and derives the first account using BIP-32 path m/44'/60'/0'/0/0
+ * and derives the first account using the proper derivation path
  * 
  * @returns {GeneratedWallet} Object containing mnemonic, address and private key
  */
 export function generateWallet(): GeneratedWallet {
-  // Create a random 12-word mnemonic
-  // In ethers v6, we use Mnemonic.fromEntropy(randomBytes) instead of Mnemonic.random()
-  const entropy = crypto.getRandomValues(new Uint8Array(16)); // 128 bits = 12 words
+  // Create a random 12-word mnemonic (128 bits entropy = 12 words)
+  const entropy = crypto.getRandomValues(new Uint8Array(16));
   const mnemonic = Mnemonic.fromEntropy(entropy);
   const phrase = mnemonic.phrase;
   
-  // Derive the HDNode wallet using BIP-32 derivation path for Ethereum
-  // m/44'/60'/0'/0/0 (purpose/coin_type/account/change/index)
-  const hdNode = HDNodeWallet.fromPhrase(phrase).derivePath("m/44'/60'/0'/0/0");
+  // Create an HD Node wallet from the mnemonic phrase
+  // Note: In ethers v6, we first create the wallet from the phrase
+  // then derive the path separately for the account
+  const hdNode = HDNodeWallet.fromPhrase(phrase);
+  
+  // Derive the account using the proper path
+  // The path should be derived step by step to avoid the error
+  const account = hdNode.derivePath("m/44'/60'/0'/0").derivePath("0");
   
   return {
     mnemonic: phrase,
-    address: hdNode.address,
-    privateKey: hdNode.privateKey,
+    address: account.address,
+    privateKey: account.privateKey,
   };
 }
 
@@ -46,12 +50,17 @@ export function generateWallet(): GeneratedWallet {
  */
 export function restoreFromMnemonic(mnemonicPhrase: string): GeneratedWallet {
   try {
-    const hdNode = HDNodeWallet.fromPhrase(mnemonicPhrase).derivePath("m/44'/60'/0'/0/0");
+    // Create an HD Node wallet from the mnemonic phrase
+    const hdNode = HDNodeWallet.fromPhrase(mnemonicPhrase);
+    
+    // Derive the account using the proper path
+    // The path should be derived step by step to avoid the error
+    const account = hdNode.derivePath("m/44'/60'/0'/0").derivePath("0");
     
     return {
       mnemonic: mnemonicPhrase,
-      address: hdNode.address,
-      privateKey: hdNode.privateKey,
+      address: account.address,
+      privateKey: account.privateKey,
     };
   } catch (error) {
     throw new Error("Invalid mnemonic phrase");
