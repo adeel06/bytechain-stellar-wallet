@@ -30,6 +30,7 @@ export function AuthScreen() {
     setShowBiometric(true);
     // In a real app, this would trigger actual biometric auth
     setTimeout(() => {
+      setShowBiometric(false);
       if (!walletExists()) {
         setShowWalletFlow(true);
       } else {
@@ -128,11 +129,13 @@ export function AuthScreen() {
       </div>
 
       {showBiometric && <BiometricPrompt />}
-      <CreateWalletFlow 
-        isOpen={showWalletFlow} 
-        onComplete={handleWalletCreated}
-        onClose={() => setShowWalletFlow(false)}
-      />
+      {showWalletFlow && (
+        <CreateWalletFlow 
+          isOpen={showWalletFlow} 
+          onComplete={handleWalletCreated}
+          onClose={() => setShowWalletFlow(false)}
+        />
+      )}
     </div>
   );
 }

@@ -114,6 +114,10 @@ export async function saveWallet(encryptedWallet: string): Promise<void> {
  * @returns {boolean} True if a wallet exists in storage
  */
 export function walletExists(): boolean {
-  return localStorage.getItem("wallet") !== null;
+  try {
+    return localStorage.getItem("wallet") !== null;
+  } catch (error) {
+    console.error("Error checking wallet existence:", error);
+    return false;
+  }
 }
-
