@@ -1,3 +1,4 @@
+
 import { Wallet, HDNodeWallet, Mnemonic } from "ethers";
 
 /**
@@ -19,17 +20,16 @@ export interface GeneratedWallet {
  * @returns {GeneratedWallet} Object containing mnemonic, address and private key
  */
 export function generateWallet(): GeneratedWallet {
-  // Create a random 12-word mnemonic (128 bits entropy = 12 words)
+  // Create a random mnemonic (128 bits entropy = 12 words)
   const entropy = crypto.getRandomValues(new Uint8Array(16));
   const mnemonic = Mnemonic.fromEntropy(entropy);
   const phrase = mnemonic.phrase;
   
-  // Create an HD Node wallet from the mnemonic phrase
-  const hdNode = HDNodeWallet.fromPhrase(phrase);
+  // Create a wallet directly from the mnemonic with the standard path
+  const wallet = HDNodeWallet.fromMnemonic(mnemonic);
   
-  // In ethers v6, we need to derive the full path at once
-  // Using the standard BIP-44 path for Ethereum: m/44'/60'/0'/0/0
-  const account = hdNode.derivePath("m/44'/60'/0'/0/0");
+  // Get the first account
+  const account = wallet.derivePath("0/0");
   
   return {
     mnemonic: phrase,
@@ -47,11 +47,11 @@ export function generateWallet(): GeneratedWallet {
  */
 export function restoreFromMnemonic(mnemonicPhrase: string): GeneratedWallet {
   try {
-    // Create an HD Node wallet from the mnemonic phrase
-    const hdNode = HDNodeWallet.fromPhrase(mnemonicPhrase);
+    // Create a wallet directly from the mnemonic
+    const wallet = HDNodeWallet.fromPhrase(mnemonicPhrase);
     
-    // Derive using the full path at once
-    const account = hdNode.derivePath("m/44'/60'/0'/0/0");
+    // Get the first account
+    const account = wallet.derivePath("0/0");
     
     return {
       mnemonic: mnemonicPhrase,
