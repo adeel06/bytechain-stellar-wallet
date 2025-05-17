@@ -1,4 +1,3 @@
-
 import { Wallet, HDNodeWallet, Mnemonic } from "ethers";
 
 /**
@@ -26,13 +25,11 @@ export function generateWallet(): GeneratedWallet {
   const phrase = mnemonic.phrase;
   
   // Create an HD Node wallet from the mnemonic phrase
-  // Note: In ethers v6, we first create the wallet from the phrase
-  // then derive the path separately for the account
   const hdNode = HDNodeWallet.fromPhrase(phrase);
   
-  // Derive the account using the proper path
-  // The path should be derived step by step to avoid the error
-  const account = hdNode.derivePath("m/44'/60'/0'/0").derivePath("0");
+  // In ethers v6, we need to derive the full path at once
+  // Using the standard BIP-44 path for Ethereum: m/44'/60'/0'/0/0
+  const account = hdNode.derivePath("m/44'/60'/0'/0/0");
   
   return {
     mnemonic: phrase,
@@ -53,9 +50,8 @@ export function restoreFromMnemonic(mnemonicPhrase: string): GeneratedWallet {
     // Create an HD Node wallet from the mnemonic phrase
     const hdNode = HDNodeWallet.fromPhrase(mnemonicPhrase);
     
-    // Derive the account using the proper path
-    // The path should be derived step by step to avoid the error
-    const account = hdNode.derivePath("m/44'/60'/0'/0").derivePath("0");
+    // Derive using the full path at once
+    const account = hdNode.derivePath("m/44'/60'/0'/0/0");
     
     return {
       mnemonic: mnemonicPhrase,
