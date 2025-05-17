@@ -6,25 +6,41 @@ import { Label } from "@/components/ui/label";
 import { Fingerprint, Lock } from "lucide-react";
 import { BiometricPrompt } from "./BiometricPrompt";
 import { useNavigate } from "react-router-dom";
+import { CreateWalletFlow } from "@/components/wallet/CreateWalletFlow";
+import { walletExists } from "@/lib/wallet";
 
 export function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showBiometric, setShowBiometric] = useState(false);
+  const [showWalletFlow, setShowWalletFlow] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo purposes, we'll just navigate to dashboard
-    navigate("/dashboard");
+    // For demo purposes, we'll check if wallet exists
+    if (!walletExists()) {
+      setShowWalletFlow(true);
+    } else {
+      navigate("/dashboard");
+    }
   };
 
   const handleBiometricAuth = () => {
     setShowBiometric(true);
     // In a real app, this would trigger actual biometric auth
     setTimeout(() => {
-      navigate("/dashboard");
+      if (!walletExists()) {
+        setShowWalletFlow(true);
+      } else {
+        navigate("/dashboard");
+      }
     }, 1500);
+  };
+
+  const handleWalletCreated = (address: string) => {
+    console.log("Wallet created with address:", address);
+    navigate("/dashboard");
   };
 
   return (
@@ -112,6 +128,11 @@ export function AuthScreen() {
       </div>
 
       {showBiometric && <BiometricPrompt />}
+      <CreateWalletFlow 
+        isOpen={showWalletFlow} 
+        onComplete={handleWalletCreated}
+        onClose={() => setShowWalletFlow(false)}
+      />
     </div>
   );
 }

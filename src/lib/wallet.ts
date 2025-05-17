@@ -77,3 +77,43 @@ export function createWalletFromPrivateKey(privateKey: string): { address: strin
     throw new Error("Invalid private key");
   }
 }
+
+/**
+ * Encrypts a wallet's private key with a password
+ * 
+ * @param {string} privateKey - The private key to encrypt
+ * @param {string} password - The password to encrypt with
+ * @returns {Promise<string>} The encrypted wallet JSON
+ */
+export async function encryptWallet(privateKey: string, password: string): Promise<string> {
+  try {
+    const wallet = new Wallet(privateKey);
+    const encrypted = await wallet.encrypt(password);
+    return encrypted;
+  } catch (error) {
+    throw new Error("Failed to encrypt wallet");
+  }
+}
+
+/**
+ * Stores the encrypted wallet in local storage
+ * 
+ * @param {string} encryptedWallet - The encrypted wallet JSON string
+ */
+export async function saveWallet(encryptedWallet: string): Promise<void> {
+  try {
+    localStorage.setItem("wallet", encryptedWallet);
+  } catch (error) {
+    throw new Error("Failed to save wallet");
+  }
+}
+
+/**
+ * Checks if a wallet exists in storage
+ * 
+ * @returns {boolean} True if a wallet exists in storage
+ */
+export function walletExists(): boolean {
+  return localStorage.getItem("wallet") !== null;
+}
+
