@@ -9,10 +9,13 @@ import { useState } from "react";
 import { CreateWalletFlow } from "@/components/wallet/CreateWalletFlow";
 import { walletExists } from "@/lib/wallet";
 import { useToast } from "@/hooks/use-toast";
+import { TwoFactorModal } from "./TwoFactorModal";
 
 export function SettingsScreen() {
   const { theme, setTheme } = useTheme();
   const [showCreateWalletFlow, setShowCreateWalletFlow] = useState(false);
+  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const { toast } = useToast();
 
   const handleWalletCreated = (address: string) => {
@@ -21,6 +24,12 @@ export function SettingsScreen() {
       title: "Wallet Created",
       description: `Your new wallet (${address.slice(0, 6)}...${address.slice(-4)}) has been created successfully.`,
     });
+  };
+
+  const handle2FAComplete = () => {
+    setShowTwoFactorModal(false);
+    setIs2FAEnabled(true);
+    // In a real app, you'd save this preference to your backend
   };
 
   return (
@@ -134,15 +143,30 @@ export function SettingsScreen() {
               <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start h-auto py-4 px-6">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start h-auto py-4 px-6"
+              onClick={() => setShowTwoFactorModal(true)}
+            >
               <Fingerprint className="mr-3 h-5 w-5" />
               <div className="flex flex-col items-start">
                 <span>Enable 2FA</span>
                 <span className="text-xs text-muted-foreground">
-                  Add an extra layer of security
+                  {is2FAEnabled 
+                    ? "Two-factor authentication is enabled" 
+                    : "Add an extra layer of security"}
                 </span>
               </div>
-              <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
+              {is2FAEnabled ? (
+                <div className="ml-auto flex items-center">
+                  <span className="mr-2 text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                    Enabled
+                  </span>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </div>
+              ) : (
+                <ChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
+              )}
             </Button>
           </div>
         </CardContent>
@@ -228,6 +252,12 @@ export function SettingsScreen() {
           onClose={() => setShowCreateWalletFlow(false)}
         />
       )}
+
+      <TwoFactorModal
+        isOpen={showTwoFactorModal}
+        onClose={() => setShowTwoFactorModal(false)}
+        onComplete={handle2FAComplete}
+      />
     </div>
   );
 }
