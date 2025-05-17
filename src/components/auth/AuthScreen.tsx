@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +17,9 @@ export function AuthScreen() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // For demo purposes, we'll check if wallet exists
-    if (!walletExists()) {
-      setShowWalletFlow(true);
-    } else {
-      navigate("/dashboard");
-    }
+    // For demo purposes, we'll go directly to dashboard
+    // The user can create a wallet from the settings page if needed
+    navigate("/dashboard");
   };
 
   const handleBiometricAuth = () => {
@@ -31,11 +27,7 @@ export function AuthScreen() {
     // In a real app, this would trigger actual biometric auth
     setTimeout(() => {
       setShowBiometric(false);
-      if (!walletExists()) {
-        setShowWalletFlow(true);
-      } else {
-        navigate("/dashboard");
-      }
+      navigate("/dashboard");
     }, 1500);
   };
 

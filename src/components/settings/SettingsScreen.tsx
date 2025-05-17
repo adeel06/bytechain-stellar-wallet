@@ -3,11 +3,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/context/ThemeContext";
-import { BellRing, ChevronRight, Fingerprint, Lock, Moon, Sun, User, Wallet } from "lucide-react";
+import { BellRing, ChevronRight, Fingerprint, Lock, Moon, PlusCircle, Sun, User, Wallet } from "lucide-react";
 import { BackupModal } from "@/components/wallet/BackupModal";
+import { useState } from "react";
+import { CreateWalletFlow } from "@/components/wallet/CreateWalletFlow";
+import { walletExists } from "@/lib/wallet";
+import { useToast } from "@/hooks/use-toast";
 
 export function SettingsScreen() {
   const { theme, setTheme } = useTheme();
+  const [showCreateWalletFlow, setShowCreateWalletFlow] = useState(false);
+  const { toast } = useToast();
+
+  const handleWalletCreated = (address: string) => {
+    console.log("Wallet created with address:", address);
+    toast({
+      title: "Wallet Created",
+      description: `Your new wallet (${address.slice(0, 6)}...${address.slice(-4)}) has been created successfully.`,
+    });
+  };
 
   return (
     <div className="container py-6 space-y-6">
@@ -58,31 +72,56 @@ export function SettingsScreen() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Security</CardTitle>
-          <CardDescription>Manage your wallet security settings</CardDescription>
+          <CardTitle className="text-lg">Wallet</CardTitle>
+          <CardDescription>Manage your cryptocurrency wallets</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">
-            <div className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 bg-muted rounded-md">
-                    <Wallet className="h-5 w-5" />
+            {walletExists() ? (
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-2 bg-muted rounded-md">
+                      <Wallet className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <Label>Wallet Backup</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Backup or restore your wallet using a recovery phrase
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <Label>Wallet Backup</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Backup or restore your wallet using a recovery phrase
-                    </p>
-                  </div>
+                  <BackupModal 
+                    currentAddress="0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+                    mnemonic={null}
+                    onRestore={(address) => console.log('Wallet restored:', address)}
+                  />
                 </div>
-                <BackupModal 
-                  currentAddress="0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
-                  mnemonic={null}
-                  onRestore={(address) => console.log('Wallet restored:', address)}
-                />
               </div>
-            </div>
+            ) : (
+              <div className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-2 bg-muted rounded-md">
+                      <PlusCircle className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <Label>Create Wallet</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Create a new cryptocurrency wallet
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowCreateWalletFlow(true)}
+                    className="bg-gradient-to-r from-bytechain-blue to-bytechain-purple text-white hover:opacity-90"
+                  >
+                    Create Wallet
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <Button variant="ghost" className="w-full justify-start h-auto py-4 px-6">
               <Lock className="mr-3 h-5 w-5" />
@@ -181,6 +220,14 @@ export function SettingsScreen() {
           </div>
         </CardContent>
       </Card>
+
+      {showCreateWalletFlow && (
+        <CreateWalletFlow 
+          isOpen={showCreateWalletFlow} 
+          onComplete={handleWalletCreated}
+          onClose={() => setShowCreateWalletFlow(false)}
+        />
+      )}
     </div>
   );
 }
