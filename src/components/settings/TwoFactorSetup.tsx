@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Copy, Check, QrCode, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock function to generate a secret key - in a real app, this would come from your backend
+// Generate a secret key - in a real app, this would come from your backend
 const generateSecretKey = () => {
   // Generate a 16-character random string using A-Z and 2-7 (base32 encoding)
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -32,12 +32,22 @@ interface TwoFactorSetupProps {
   onClose: () => void;
   onComplete: () => void;
   username: string;
+  method: 'app' | 'sms';
+  phoneNumber?: string;
 }
 
-export function TwoFactorSetup({ isOpen, onClose, onComplete, username }: TwoFactorSetupProps) {
-  const [step, setStep] = useState<'qrcode' | 'verify'>('qrcode');
+export function TwoFactorSetup({ 
+  isOpen, 
+  onClose, 
+  onComplete, 
+  username, 
+  method,
+  phoneNumber 
+}: TwoFactorSetupProps) {
+  const [step, setStep] = useState<'qrcode' | 'verify' | 'phone'>('qrcode');
   const [secretKey, setSecretKey] = useState<string>('');
   const [verificationCode, setVerificationCode] = useState<string>('');
+  const [phone, setPhone] = useState(phoneNumber || '');
   const [copied, setCopied] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
@@ -46,22 +56,45 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete, username }: TwoFac
     if (isOpen) {
       // Generate a new secret key when the dialog opens
       setSecretKey(generateSecretKey());
-      setStep('qrcode');
+      setStep(method === 'app' ? 'qrcode' : 'phone');
       setVerificationCode('');
     }
-  }, [isOpen]);
+  }, [isOpen, method]);
 
   const appName = "ByteChain";
-  const qrCodeUrl = `https://chart.googleapis.com/chart?chs=200x200&chld=M|0&cht=qr&chl=otpauth://totp/${encodeURIComponent(appName)}:${encodeURIComponent(username)}?secret=${secretKey}&issuer=${encodeURIComponent(appName)}`;
+  // Use a different, more reliable QR code service
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/${encodeURIComponent(appName)}:${encodeURIComponent(username)}?secret=${secretKey}&issuer=${encodeURIComponent(appName)}`;
 
   const handleCopySecretKey = async () => {
-    await navigator.clipboard.writeText(secretKey);
-    setCopied(true);
-    toast({
-      title: "Secret key copied",
-      description: "The secret key has been copied to your clipboard."
-    });
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(secretKey);
+      setCopied(true);
+      toast({
+        title: "Secret key copied",
+        description: "The secret key has been copied to your clipboard."
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({
+        title: "Failed to copy",
+        description: "Please copy the secret key manually.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSendSMS = () => {
+    // In a real app, this would send an SMS code via your backend
+    setIsVerifying(true);
+    
+    setTimeout(() => {
+      setIsVerifying(false);
+      setStep('verify');
+      toast({
+        title: "SMS Code Sent",
+        description: `Verification code has been sent to ${phone}`
+      });
+    }, 1500);
   };
 
   const handleVerifyCode = () => {
@@ -98,7 +131,9 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete, username }: TwoFac
           <DialogDescription>
             {step === 'qrcode' 
               ? "Scan the QR code with your authenticator app or enter the secret key manually."
-              : "Enter the 6-digit verification code from your authenticator app."}
+              : step === 'phone'
+              ? "Enter your phone number to receive verification codes via SMS."
+              : "Enter the 6-digit verification code from your authenticator app or SMS."}
           </DialogDescription>
         </DialogHeader>
         
@@ -110,6 +145,15 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete, username }: TwoFac
                 alt="QR Code for 2FA setup" 
                 width={200} 
                 height={200} 
+                onError={(e) => {
+                  // Fallback if image fails to load
+                  e.currentTarget.onerror = null;
+                  toast({
+                    title: "QR Code Error",
+                    description: "Failed to load QR code. Please use the secret key instead.",
+                    variant: "destructive"
+                  });
+                }}
               />
             </div>
             
@@ -146,6 +190,40 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete, username }: TwoFac
               Continue
             </Button>
           </div>
+        ) : step === 'phone' ? (
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="phone-number">Phone Number</Label>
+              <Input
+                id="phone-number"
+                type="tel"
+                placeholder="+1 (555) 555-5555"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="text-base"
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter your phone number to receive verification codes via SMS
+              </p>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={onClose}
+                className="sm:w-auto w-full"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSendSMS} 
+                disabled={!phone || isVerifying}
+                className="sm:w-auto w-full"
+              >
+                {isVerifying ? "Sending..." : "Send Code"}
+              </Button>
+            </DialogFooter>
+          </div>
         ) : (
           <div className="space-y-6">
             <div className="space-y-2">
@@ -159,14 +237,14 @@ export function TwoFactorSetup({ isOpen, onClose, onComplete, username }: TwoFac
                 className="text-center font-mono text-lg tracking-widest"
               />
               <p className="text-xs text-muted-foreground text-center">
-                Enter the 6-digit code from your authenticator app
+                Enter the 6-digit code from your {method === 'app' ? 'authenticator app' : 'SMS message'}
               </p>
             </div>
             
             <DialogFooter className="flex flex-col gap-2 sm:flex-row">
               <Button 
                 variant="outline" 
-                onClick={() => setStep('qrcode')}
+                onClick={() => setStep(method === 'app' ? 'qrcode' : 'phone')}
                 className="sm:w-auto w-full"
               >
                 Back
