@@ -1,4 +1,7 @@
-## This is a perfomant Layer One that has been designed for the sole purpose of 
+## This is a perfomant Layer One that has been designed for the purpose of a Performant Layer Zero Blockchain with Web 4.0 functionality.
+
+## Welcome to HVME - a leap forward in 
+
 
 ## What technologies are used for this project?
 
